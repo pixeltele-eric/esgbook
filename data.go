@@ -8,12 +8,6 @@ import (
 	"time"
 )
 
-const (
-	companyIDCol   = 0
-	dateOrYearCol  = 1
-	firstMetricCol = 2
-)
-
 // Load disclosure dataset where year is a column and each row is unique
 func loadDisclosureData(path string) Dataset {
 	file, err := os.Open(path)
@@ -31,11 +25,11 @@ func loadDisclosureData(path string) Dataset {
 	header := rows[0]
 	data := make(Dataset)
 	for _, row := range rows[1:] {
-		companyID, _ := strconv.Atoi(row[companyIDCol])
-		year, _ := strconv.Atoi(row[dateOrYearCol])
+		companyID, _ := strconv.Atoi(row[0])
+		year, _ := strconv.Atoi(row[1])
 		vals := make(MetricValues)
-		for i, h := range header[firstMetricCol:] {
-			v, err := strconv.ParseFloat(row[i+firstMetricCol], 64)
+		for i, h := range header[2:] {
+			v, err := strconv.ParseFloat(row[i+2], 64)
 			if err == nil {
 				vals[h] = v
 			}
@@ -65,8 +59,8 @@ func loadLatestPerYear(path string, prefix string) Dataset {
 	latestDate := make(map[CompanyYear]time.Time)
 
 	for _, row := range rows[1:] {
-		companyID, _ := strconv.Atoi(row[companyIDCol])
-		t, _ := time.Parse("2006-01-02", row[dateOrYearCol])
+		companyID, _ := strconv.Atoi(row[0])
+		t, _ := time.Parse("2006-01-02", row[1])
 		year := t.Year()
 		key := CompanyYear{CompanyID: companyID, Year: year}
 		if prevDate, exists := latestDate[key]; exists && !t.After(prevDate) {
@@ -74,8 +68,8 @@ func loadLatestPerYear(path string, prefix string) Dataset {
 		}
 
 		vals := make(MetricValues)
-		for i, h := range header[firstMetricCol:] {
-			v, err := strconv.ParseFloat(row[i+firstMetricCol], 64)
+		for i, h := range header[2:] {
+			v, err := strconv.ParseFloat(row[i+2], 64)
 			if err == nil {
 				vals[h] = v
 				vals[prefix+"."+h] = v // Also store with prefix

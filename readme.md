@@ -1,40 +1,49 @@
-# Trade-offs made:
+# ESGBOOK POC
+## Trade-offs
+- Just scoring company-years where all data exists (assumes clean data, “happy path” only, minimal error handlings/abstractions for POC).
 
-Only company-year pairs with data in all sources are scored (happy path).
+- If any source is missing or divisor is zero, that metric comes out blank.
 
-Missing or zero denominator results in blank metric output (as per requirements).
+- Tried to keep code as readable as possible and close to config structure.
 
-Code focuses on readability and direct mapping of config logic, not extensibility or speed.
+## Scaling
+- If there was 100x more data, will avoid keeping all CSVs into memory.
 
-# Scaling:
+- Would probably use a real database for joins, or Spark.
 
-With 100x more data, use batch or streaming ETL, possibly loading into a DB for fast joins, or distributed processing (Spark, Dask, Dataflow).
+- For streaming/production scale, could build ETL to preprocess and store the latest company-year records, then run the scoring as a batch process.
 
-# Production:
+## Production
+- This would run as a scheduled batch job.
 
-Deploy as a batch job, with monitoring (metrics on input/output count, time, errors).
+- integration with existing logging infra, input/output counts, maybe some simple checks/alerts if anything goes wrong.
 
-Add retries and error handling for data quality or missing files.
+- Add error handling and retries for data/file issues.
 
-Add logging, and unit/integration tests for each metric type and config parse.
+- Add tests for the metric calculations and config parsing to catch edge cases or config changes.
 
+## notes:
+- hardcoded windows path for POC
 
-## Architecture Diagram
+## Protential Architecture Diagram
 
 ```text
-[External Data Sources: APIs, CSV, S3, Partner Feeds]
+[External Data Sources: like APIs, CSV, S3]
              |
              |
-[ETL/ELT Pipelines] (Golang, Python, Airflow/Argo)
+[ETL/ELT Pipelines] (Airflow)
              |
              |
-[Data Storage Layer] (Data Warehouse, RDBMS, NoSQL)
+[OLAP: Data Storage] (Data Warehouse like Snowflake might be the choice, because the data has been transformed by ETL/ELT pipeline)
              |
              |
-[Analytics & Scoring Services](Microservices in Go/Python)
+[Analytics & Scoring Services](Microservices in Go, this is what POC implemented)
              |
              |
-[API Gateway Layer] (REST/gRPC APIs, AuthN/Z)
+[OLTP: Data Storage](Database like cassandra or Mysql depends on the needs, to serve the webserver)
              |
              |
-[Clients, Internal Teams, Dashboards, Integrations]
+[API Gateway Layer] (REST/gRPC APIs) 
+             |
+             |
+[Clients, Internal Teams, etc]
